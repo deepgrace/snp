@@ -10,6 +10,7 @@
 #ifndef SNP_HPP
 #define SNP_HPP
 
+#include <asio_context.hpp>
 #include <async_accept.hpp>
 #include <async_close.hpp>
 #include <async_connect.hpp>

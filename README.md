@@ -86,6 +86,15 @@ snp provides the following sender factories:
 snp provides the following sender consumer:
 - **start_detached**
 
+snp provides the following scheduler type:
+- **asio_context**
+
+snp provides the following scheduler algorithms:
+- **now**
+- **schedule**
+- **schedule_at**
+- **schedule_after**
+
 ## Prerequsites
 [boost](https://www.boost.org)  
 [uring](https://github.com/axboe/liburing)  

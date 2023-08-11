@@ -17,10 +17,12 @@
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 #include <snp.hpp>
+#include <unifex/on.hpp>
 #include <unifex/then.hpp>
+#include <unifex/just_from.hpp>
 #include <unifex/upon_error.hpp>
 
-// g++ -std=c++23 -O3 -Os -I include -l uring example/chat_client_ws.cpp -o /tmp/chat_client_ws
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/chat_client_ws.cpp -o /tmp/chat_client_ws
 
 namespace net = boost::asio;
 namespace beast = boost::beast;
@@ -45,21 +47,38 @@ using chat_message_queue = std::deque<std::string>;
 class chat_client
 {
 public:
-    chat_client(net::io_context& ioc, const std::string& host, const std::string& port) : ioc(ioc), socket(net::make_strand(ioc)), host(host), port(port)
+    chat_client(snp::asio_context& ctx, const std::string& host, const std::string& port) :
+    ctx(ctx), ioc(ctx.get_io_context()), sch(ctx.get_scheduler()), socket(net::make_strand(ioc)), host(host), port(port)
     {
         do_resolve();
     }
 
     void write(const std::string& msg)
     {
-        net::post(ioc, [this, msg]
+        unifex::on(sch, unifex::just_from([this, msg]
         {
             bool write_in_progress = !write_msgs_.empty();
             write_msgs_.push_back(msg);
 
             if (!write_in_progress)
                 do_write();
-        });
+        }))
+        | unifex::upon_error([this]<typename Error>(Error error)
+          {
+              if constexpr(std::is_same_v<Error, std::exception_ptr>)
+              {
+                  try
+                  {
+                      if (error)
+                          std::rethrow_exception(error);
+                  }
+                  catch (const std::exception& e)
+                  {
+                      std::cout << "caught exception: '" << e.what() << "'" << std::endl;
+                  }
+              }
+          })
+        | snp::start_detached();
     }
 
     void close()
@@ -214,7 +233,10 @@ private:
     }
 
 private:
+    snp::asio_context& ctx;
     net::io_context& ioc;
+
+    snp::asio_scheduler sch;
     socket_t socket;
 
     std::string host;
@@ -235,11 +257,11 @@ int main(int argc, char* argv[])
             return 1;
         }
 
-        net::io_context ioc;
-        chat_client c(ioc, argv[1], argv[2]);
+        snp::asio_context ctx;
+        chat_client c(ctx, argv[1], argv[2]);
 
         std::string line;
-        std::thread t([&ioc]{ ioc.run(); });
+        std::thread t([&ctx]{ ctx.run(); });
 
         while (std::getline(std::cin, line))
                c.write(line);

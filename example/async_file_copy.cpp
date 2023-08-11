@@ -16,7 +16,7 @@
 #include <unifex/then.hpp>
 #include <unifex/upon_error.hpp>
 
-// g++ -std=c++23 -O3 -Os -I include -l uring example/async_file_copy.cpp -o /tmp/async_file_copy
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/async_file_copy.cpp -o /tmp/async_file_copy
 
 namespace net = boost::asio;
 

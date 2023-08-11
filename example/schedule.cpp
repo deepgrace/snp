@@ -12,10 +12,13 @@
 
 #include <iostream>
 #include <snp.hpp>
+#include <unifex/on.hpp>
+#include <unifex/just.hpp>
 #include <unifex/then.hpp>
 #include <unifex/upon_error.hpp>
+#include <unifex/scheduler_concepts.hpp>
 
-// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/async_wait_until.cpp -o /tmp/async_wait_until
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/schedule.cpp -o /tmp/schedule
 
 namespace net = boost::asio;
 
@@ -23,42 +26,43 @@ using error_code_t = boost::system::error_code;
 
 int main(int argc, char* argv[])
 {
-    if (argc != 2)
-    {
-        std::cerr << "Usage: " << argv[0] << " <number>" << std::endl;
-
-        return 1;
-    }
-
-    net::io_context ioc;
-    int number = std::stoi(argv[1]);
-
     bool timed_out = false;
-    net::steady_timer timer(ioc);
 
-    auto tp = std::chrono::steady_clock::now() + std::chrono::seconds(number);
+    snp::asio_context ctx;
+    auto sch = ctx.get_scheduler();
 
-    snp::async_wait_until(timer, tp)
-    | unifex::then([&]
+    unifex::on(sch, unifex::just(4))
+    | unifex::then([&](int n)
       {
           timed_out = true;
+          std::cout << "schedule " << n << std::endl;
       })
     | unifex::upon_error([]<typename Error>(Error error)
       {
-          if constexpr(std::is_same_v<Error, error_code_t>)
-              std::cout << "async_wait: " << error.message() << std::endl;
+          if constexpr(std::is_same_v<Error, std::exception_ptr>)
+          {
+              try
+              {
+                  if (error)
+                      std::rethrow_exception(error);
+              }
+              catch (const std::exception& e)
+              {
+                  std::cout << "caught exception: '" << e.what() << "'" << std::endl;
+              }
+          }
       })
     | snp::start_detached(); 
 
     assert(!timed_out);
     auto begin = std::chrono::steady_clock::now();
 
-    ioc.run();
+    ctx.run();
 
     auto end = std::chrono::steady_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
 
-    std::cout << "async_wait_until waited " << dur << " seconds" << std::endl;
+    std::cout << "scheduler elapsed " << dur << " seconds" << std::endl;
 
     assert(timed_out);
 

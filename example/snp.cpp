@@ -15,7 +15,7 @@
 #include <unifex/then.hpp>
 #include <unifex/upon_error.hpp>
 
-// g++ -std=c++23 -O3 -Os -I include -l uring example/snp.cpp -o /tmp/snp
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/snp.cpp -o /tmp/snp
 
 namespace net = boost::asio;
 

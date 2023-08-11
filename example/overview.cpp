@@ -17,7 +17,7 @@
 #include <unifex/let_value.hpp>
 #include <unifex/upon_error.hpp>
 
-// g++ -std=c++23 -O3 -Os -I include -l uring example/overview.cpp -o /tmp/overview
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/overview.cpp -o /tmp/overview
 
 namespace net = boost::asio;
 

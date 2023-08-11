@@ -17,7 +17,7 @@
 #include <unifex/then.hpp>
 #include <unifex/upon_error.hpp>
 
-// g++ -std=c++23 -O3 -Os -I include -l uring example/stream_client.cpp -o /tmp/stream_client
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/stream_client.cpp -o /tmp/stream_client
 
 using namespace unifex;
 namespace net = boost::asio;

@@ -15,7 +15,7 @@
 #include <unifex/then.hpp>
 #include <unifex/upon_error.hpp>
 
-// g++ -std=c++23 -O3 -Os -I include -l uring example/async_wait.cpp -o /tmp/async_wait
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/async_wait.cpp -o /tmp/async_wait
 
 namespace net = boost::asio;
 

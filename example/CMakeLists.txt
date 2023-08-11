@@ -8,7 +8,6 @@
 #
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
-set(CMAKE_BUILD_TYPE Release)
 SET(CMAKE_CXX_FLAGS "-std=c++23 -Wall -O3 -Os -s")
 
 include(GNUInstallDirs)

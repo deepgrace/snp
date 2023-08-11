@@ -14,11 +14,13 @@
 #include <thread>
 #include <iostream>
 #include <snp.hpp>
+#include <unifex/on.hpp>
 #include <unifex/then.hpp>
+#include <unifex/just_from.hpp>
 #include <unifex/upon_error.hpp>
 #include "chat_message.hpp"
 
-// g++ -std=c++23 -O3 -Os -I include -l uring example/chat_client_tcp.cpp -o /tmp/chat_client_tcp
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/chat_client_tcp.cpp -o /tmp/chat_client_tcp
 
 namespace net = boost::asio;
 
@@ -34,21 +36,38 @@ using chat_message_queue = std::deque<chat_message>;
 class chat_client
 {
 public:
-    chat_client(net::io_context& ioc, const std::string& host, const std::string& port) : ioc(ioc), socket(ioc), host(host), port(port)
+    chat_client(snp::asio_context& ctx, const std::string& host, const std::string& port) :
+    ctx(ctx), ioc(ctx.get_io_context()), sch(ctx.get_scheduler()), socket(ioc), host(host), port(port)
     {
         do_resolve();
     }
 
     void write(const chat_message& msg)
     {
-        net::post(ioc, [this, msg]
+        unifex::on(sch, unifex::just_from([this, msg]
         {
             bool write_in_progress = !write_msgs_.empty();
             write_msgs_.push_back(msg);
 
             if (!write_in_progress)
                 do_write();
-        });
+        }))
+        | unifex::upon_error([this]<typename Error>(Error error)
+          {
+              if constexpr(std::is_same_v<Error, std::exception_ptr>)
+              {
+                  try
+                  {
+                      if (error)
+                          std::rethrow_exception(error);
+                  }
+                  catch (const std::exception& e)
+                  {
+                      std::cout << "caught exception: '" << e.what() << "'" << std::endl;
+                  }
+              }
+          })
+        | snp::start_detached();
     }
 
     void close()
@@ -193,7 +212,10 @@ private:
     }
 
 private:
+    snp::asio_context& ctx;
     net::io_context& ioc;
+
+    snp::asio_scheduler sch;
     socket_t socket;
 
     std::string host;
@@ -214,10 +236,10 @@ int main(int argc, char* argv[])
             return 1;
         }
 
-        net::io_context ioc;
-        chat_client c(ioc, argv[1], argv[2]);
+        snp::asio_context ctx;
+        chat_client c(ctx, argv[1], argv[2]);
 
-        std::thread t([&ioc]{ ioc.run(); });
+        std::thread t([&ctx]{ ctx.run(); });
         char line[chat_message::max_body_length + 1];
 
         while (std::cin.getline(line, chat_message::max_body_length + 1))

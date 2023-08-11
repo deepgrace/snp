@@ -3,7 +3,7 @@
 dst=/tmp
 path=example
 
-flags=(-std=c++23 -Wall -O3 -Os -I ../include -l uring)
+flags=(-std=c++23 -Wall -O3 -Os -s -I ../include -l uring)
 
 cd ${path}
 

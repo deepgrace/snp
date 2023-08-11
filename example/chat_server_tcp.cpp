@@ -19,7 +19,7 @@
 #include <unifex/upon_error.hpp>
 #include "chat_message.hpp"
 
-// g++ -std=c++23 -O3 -Os -I include -l uring example/chat_server_tcp.cpp -o /tmp/chat_server_tcp
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/chat_server_tcp.cpp -o /tmp/chat_server_tcp
 
 using namespace unifex;
 namespace net = boost::asio;
