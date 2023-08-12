@@ -20,7 +20,7 @@
  *   time a set of code changes is merged to the master branch.
  */
 
-#define SNP_VERSION_NUMBER 2
+#define SNP_VERSION_NUMBER 3
 #define SNP_VERSION_STRING "snp/" SNP_STRINGIZE(SNP_VERSION_NUMBER)
 
 #endif

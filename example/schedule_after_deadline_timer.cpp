@@ -12,10 +12,13 @@
 
 #include <iostream>
 #include <snp.hpp>
+#include <unifex/on.hpp>
+#include <unifex/just.hpp>
 #include <unifex/then.hpp>
 #include <unifex/upon_error.hpp>
+#include <unifex/scheduler_concepts.hpp>
 
-// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/async_wait.cpp -o /tmp/async_wait
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/schedule_after_deadline_timer.cpp -o /tmp/schedule_after_deadline_timer
 
 namespace net = boost::asio;
 
@@ -30,33 +33,46 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    net::io_context ioc;
     int number = std::stoi(argv[1]);
 
     bool timed_out = false;
-    net::steady_timer timer(ioc);
+    snp::asio_context ctx;
 
-    snp::async_wait(timer, std::chrono::seconds(number))
-    | unifex::then([&]
+    auto sch = ctx.get_scheduler();
+    auto duration = boost::posix_time::seconds(number);
+
+    unifex::then(unifex::schedule_after(sch, duration), []{ return 16; })
+    | unifex::then([&](int n)
       {
           timed_out = true;
+          std::cout << "schedule_after deadline_timer " << n << std::endl;
       })
     | unifex::upon_error([]<typename Error>(Error error)
       {
-          if constexpr(std::is_same_v<Error, error_code_t>)
-              std::cout << "async_wait: " << error.message() << std::endl;
+          if constexpr(std::is_same_v<Error, std::exception_ptr>)
+          {
+              try
+              {
+                  if (error)
+                      std::rethrow_exception(error);
+              }
+              catch (const std::exception& e)
+              {
+                  std::cout << "caught exception: '" << e.what() << "'" << std::endl;
+              }
+          }
       })
     | snp::start_detached(); 
 
     assert(!timed_out);
     auto begin = std::chrono::steady_clock::now();
 
-    ioc.run();
+    ctx.run();
 
     auto end = std::chrono::steady_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
 
-    std::cout << "async_wait waited " << dur << " seconds" << std::endl;
+    std::cout << "scheduler elapsed " << dur << " seconds" << std::endl;
 
     assert(timed_out);
 

@@ -15,7 +15,7 @@
 #include <unifex/then.hpp>
 #include <unifex/upon_error.hpp>
 
-// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/async_wait_until.cpp -o /tmp/async_wait_until
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/async_wait_deadline_timer.cpp -o /tmp/async_wait_deadline_timer
 
 namespace net = boost::asio;
 
@@ -34,11 +34,9 @@ int main(int argc, char* argv[])
     int number = std::stoi(argv[1]);
 
     bool timed_out = false;
-    net::steady_timer timer(ioc);
+    net::deadline_timer timer(ioc);
 
-    auto tp = std::chrono::steady_clock::now() + std::chrono::seconds(number);
-
-    snp::async_wait_until(timer, tp)
+    snp::async_wait(timer, boost::posix_time::seconds(number))
     | unifex::then([&]
       {
           timed_out = true;
@@ -46,7 +44,7 @@ int main(int argc, char* argv[])
     | unifex::upon_error([]<typename Error>(Error error)
       {
           if constexpr(std::is_same_v<Error, error_code_t>)
-              std::cout << "async_wait: " << error.message() << std::endl;
+              std::cout << "async_wait deadline_timer: " << error.message() << std::endl;
       })
     | snp::start_detached(); 
 
@@ -58,7 +56,7 @@ int main(int argc, char* argv[])
     auto end = std::chrono::steady_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
 
-    std::cout << "async_wait_until waited " << dur << " seconds" << std::endl;
+    std::cout << "async_wait deadline_timer waited " << dur << " seconds" << std::endl;
 
     assert(timed_out);
 

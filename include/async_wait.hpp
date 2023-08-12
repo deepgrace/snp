@@ -20,7 +20,17 @@ namespace snp
     template <typename Timer>
     struct async_wait
     {
-        using duration = typename Timer::duration;
+        template <typename T, typename = std::void_t<>>
+        struct impl : std::type_identity<typename T::duration>
+        {
+        };
+
+        template <typename T>
+        struct impl<T, std::void_t<typename T::duration_type>> : std::type_identity<typename T::duration_type>
+        {
+        };
+
+        using duration = typename impl<Timer>::type;
         using error_code_t = boost::system::error_code;
 
         template <template <typename ...> typename Variant, template <typename ...> typename Tuple>
@@ -40,7 +50,7 @@ namespace snp
         {
             constexpr decltype(auto) start() noexcept
             {
-                timer.expires_after(dur);
+                timer.expires_from_now(dur);
 
                 timer.async_wait([receiver = std::move(receiver)](error_code_t ec) mutable
                 {

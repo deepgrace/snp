@@ -19,10 +19,30 @@ namespace snp::asio
     namespace net = boost::asio;
     using clock = std::chrono::steady_clock;
 
-    template <typename T>
-    using timer_t = net::basic_waitable_timer<typename T::clock>;
+    template <typename T, typename = std::void_t<>>
+    struct choose : std::type_identity<net::steady_timer>
+    {
+    };
 
-    template <typename T, typename U>
+    template <typename T>
+    struct choose<T, std::void_t<typename T::clock>> : std::type_identity<net::basic_waitable_timer<typename T::clock>>
+    {
+    };
+
+    template <typename T, typename = std::void_t<>>
+    struct select : std::type_identity<net::deadline_timer>
+    {
+    };
+
+    template <typename T>
+    struct select<T, std::void_t<typename T::period>> : choose<T>
+    {
+    };
+
+    template <typename T>
+    using timer_t = typename select<T>::type;
+
+    template <typename T, typename U, bool B>
     struct schedule_sender
     {
         using error_code_t = boost::system::error_code;
@@ -64,10 +84,10 @@ namespace snp::asio
 
             void set_timer()
             {
-                if constexpr(requires { typename T::clock; })
+                if constexpr(B)
                     u.expires_at(t);
-                else if constexpr(requires { std::declval<T>().zero(); })
-                    u.expires_after(t);
+                else
+                    u.expires_from_now(t);
 
                 u.async_wait([this](error_code_t ec) mutable
                 {
@@ -110,19 +130,19 @@ namespace snp::asio
 
         constexpr decltype(auto) schedule() const noexcept
         {
-            return schedule_sender<bool, bool>(*ioc);
+            return schedule_sender<bool, bool, 1>(*ioc);
         }
 
         template <typename T>
         constexpr decltype(auto) schedule_at(const T& time_point) const noexcept
         {
-            return schedule_sender<T, timer_t<T>>(*ioc, time_point, timer_t<T>(*ioc));
+            return schedule_sender<T, timer_t<T>, 1>(*ioc, time_point, timer_t<T>(*ioc));
         }
 
         template <typename T>
         constexpr decltype(auto) schedule_after(const T& duration) const noexcept
         {
-            return schedule_sender<T, net::steady_timer>(*ioc, duration, net::steady_timer(*ioc));
+            return schedule_sender<T, timer_t<T>, 0>(*ioc, duration, timer_t<T>(*ioc));
         }
 
         friend constexpr bool operator==(scheduler l, scheduler r) noexcept

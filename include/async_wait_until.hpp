@@ -20,7 +20,17 @@ namespace snp
     template <typename Timer>
     struct async_wait_until
     {
-        using time_point = typename Timer::time_point;
+        template <typename T, typename = std::void_t<>>
+        struct impl : std::type_identity<typename T::time_point>
+        {
+        };
+
+        template <typename T>
+        struct impl<T, std::void_t<typename T::time_type>> : std::type_identity<typename T::time_type>
+        {
+        };
+
+        using time_point = typename impl<Timer>::type;
         using error_code_t = boost::system::error_code;
 
         template <template <typename ...> typename Variant, template <typename ...> typename Tuple>

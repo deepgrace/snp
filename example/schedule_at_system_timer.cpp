@@ -18,7 +18,7 @@
 #include <unifex/upon_error.hpp>
 #include <unifex/scheduler_concepts.hpp>
 
-// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/schedule_at.cpp -o /tmp/schedule_at
+// g++ -std=c++23 -Wall -O3 -Os -s -I include -l uring example/schedule_at_system_timer.cpp -o /tmp/schedule_at_system_timer
 
 namespace net = boost::asio;
 
@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
     | unifex::then([&](int n)
       {
           timed_out = true;
-          std::cout << "schedule_at " << n << std::endl;
+          std::cout << "schedule_at system_timer " << n << std::endl;
       })
     | unifex::upon_error([]<typename Error>(Error error)
       {
@@ -65,11 +65,11 @@ int main(int argc, char* argv[])
     | snp::start_detached(); 
 
     assert(!timed_out);
-    auto begin = std::chrono::steady_clock::now();
+    auto begin = std::chrono::system_clock::now();
 
     ctx.run();
 
-    auto end = std::chrono::steady_clock::now();
+    auto end = std::chrono::system_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::seconds>(end - begin).count();
 
     std::cout << "scheduler elapsed " << dur << " seconds" << std::endl;
