@@ -17,7 +17,7 @@ namespace snp
 {
     namespace net = boost::asio;
 
-    template <typename Stream, typename Result>
+    template <typename Stream, typename Endpoints>
     struct async_connect
     {
         using error_code_t = boost::system::error_code;
@@ -31,7 +31,7 @@ namespace snp
 
         static constexpr bool sends_done = true;
 
-        async_connect(Stream& stream, Result&& result) : stream(stream), result(std::forward<Result>(result))
+        async_connect(Stream& stream, Endpoints&& endpoints) : stream(stream), endpoints(std::forward<Endpoints>(endpoints))
         {
         }
 
@@ -40,7 +40,7 @@ namespace snp
         {
             constexpr decltype(auto) start() noexcept
             {
-                net::async_connect(stream, result, [receiver = std::move(receiver)](error_code_t ec, endpoint_t ep) mutable
+                net::async_connect(stream, endpoints, [receiver = std::move(receiver)](error_code_t ec, endpoint_t ep) mutable
                 {
                     if (!ec)
                         unifex::set_value(std::move(receiver), ep);
@@ -52,21 +52,21 @@ namespace snp
             Receiver receiver;
 
             Stream& stream;
-            Result result;
+            Endpoints endpoints;
         };
 
         template <typename Receiver>
         constexpr decltype(auto) connect(Receiver&& receiver)
         {
-            return operation<std::remove_cvref_t<Receiver>>{std::forward<Receiver>(receiver), stream, result};
+            return operation<std::remove_cvref_t<Receiver>>{std::forward<Receiver>(receiver), stream, endpoints};
         }
 
         Stream& stream;
-        Result result;
+        Endpoints endpoints;
     };
 
-    template <typename Stream, typename Result>
-    async_connect(Stream& stream, Result&& result) -> async_connect<Stream, Result>;
+    template <typename Stream, typename Endpoints>
+    async_connect(Stream& stream, Endpoints&& endpoints) -> async_connect<Stream, Endpoints>;
 }
 
 #endif

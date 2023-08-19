@@ -42,10 +42,10 @@ namespace snp
         {
             constexpr decltype(auto) start() noexcept
             {
-                resolver.async_resolve(host, service, [receiver = std::move(receiver)](error_code_t ec, results_type results) mutable
+                resolver.async_resolve(host, service, [receiver = std::move(receiver)](error_code_t ec, results_type endpoints) mutable
                 {
                     if (!ec)
-                        unifex::set_value(std::move(receiver), results);
+                        unifex::set_value(std::move(receiver), endpoints);
                     else
                         unifex::set_error(std::move(receiver), ec);
                 });

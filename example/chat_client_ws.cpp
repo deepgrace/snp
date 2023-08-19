@@ -104,9 +104,9 @@ private:
     void do_resolve()
     {
         snp::async_resolve(ioc, host, port)
-        | unifex::then([this](results_type results) 
+        | unifex::then([this](results_type endpoints)
           {
-              on_resolve(results);
+              on_resolve(endpoints);
           })
         | unifex::upon_error([this]<typename Error>(Error error)
           {
@@ -118,17 +118,17 @@ private:
         | snp::start_detached();
     }
 
-    void on_resolve(const results_type& results)
+    void on_resolve(const results_type& endpoints)
     {
-        do_connect(results);
+        do_connect(endpoints);
     }
 
-    void do_connect(const results_type& results)
+    void do_connect(const results_type& endpoints)
     {
         auto& layer = beast::get_lowest_layer(socket);
         layer.expires_after(std::chrono::seconds(30));
 
-        snp::async_connect(layer.socket(), results)
+        snp::async_connect(layer.socket(), endpoints)
         | unifex::then([this](endpoint_t e)
           {
               on_connect(e);

@@ -54,10 +54,10 @@ namespace snp
 
                 timer.async_wait([receiver = std::move(receiver)](error_code_t ec) mutable
                 {
-                    if (ec == net::error::operation_aborted)
-                        unifex::set_done(std::move(receiver));
-                    else
+                    if (!ec)
                         unifex::set_value(std::move(receiver));
+                    else
+                        unifex::set_error(std::move(receiver), ec);
                 });
             }
 

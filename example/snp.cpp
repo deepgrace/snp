@@ -46,9 +46,9 @@ int main(int argc, char* argv[])
     std::string text = argv[3];
 
     snp::async_resolve(ioc, host, port) 
-    | unifex::then([&](results_type results)
+    | unifex::then([&](results_type endpoints)
       {
-          for (auto& r : results)
+          for (auto& r : endpoints)
           {
                auto ep = r.endpoint();
 
@@ -56,7 +56,7 @@ int main(int argc, char* argv[])
                std::cout << "host_name " << r.host_name() << " service_name " << r.service_name() << std::endl;
           }
 
-          snp::async_connect(socket, results)
+          snp::async_connect(socket, endpoints)
           | unifex::then([&](tcp::endpoint e)
             {
                 std::cout << "connected to " << e.address() << " " << e.port() << std::endl;

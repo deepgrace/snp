@@ -175,6 +175,11 @@ namespace snp::asio
             ioc.run();
         }
 
+        constexpr decltype(auto) stop()
+        {
+            ioc.stop();
+        }
+
         net::io_context ioc;
     };
 }

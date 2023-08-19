@@ -33,7 +33,7 @@ constexpr std::size_t length = 1024;
 class client
 {
 public:
-    client(net::io_context& ioc, const std::string& file) : socket(ioc), v{endpoint_t(file)}
+    client(net::io_context& ioc, const std::string& file) : socket(ioc), endpoints{endpoint_t(file)}
     {
     }
 
@@ -44,7 +44,7 @@ public:
 
     void do_connect()
     {
-        snp::async_connect(socket, v)
+        snp::async_connect(socket, endpoints)
         | unifex::then([this](endpoint_t ep)
           {
               on_connect();
@@ -117,7 +117,7 @@ private:
     socket_t socket; 
 
     std::size_t size;
-    std::vector<endpoint_t> v;
+    std::vector<endpoint_t> endpoints;
 };
 
 

@@ -36,9 +36,9 @@ int main(int argc, char* argv[])
     std::string host = "isocpp.org";
 
     snp::async_resolve(ioc, host, port) 
-    | unifex::then([&](results_type results)
+    | unifex::then([&](results_type endpoints)
       {
-          return snp::async_connect(socket, results);
+          return snp::async_connect(socket, endpoints);
       })
     | unifex::let_value([&]<typename T>(T&& t)
       {
